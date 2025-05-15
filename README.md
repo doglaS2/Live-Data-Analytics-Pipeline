@@ -2,7 +2,7 @@
 
 Este projeto implementa um pipeline de dados em tempo real que gera, ingere, processa e visualiza eventos contínuos utilizando Docker para orquestração. Ele integra Kafka, Spark e uma aplicação Python para processar dados em streaming.
 
-```
+---
 
 ## Estrutura do Projeto
 
@@ -19,7 +19,8 @@ docker-kafka-spark-python
 └── README.md
 
 
-```
+---
+
 ## Tecnologias Utilizadas
 
 - 🐍 Python (geração e envio de eventos em JSON)

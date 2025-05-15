@@ -66,7 +66,7 @@ def consumir_eventos():
         .appName("KafkaSparkPythonApp") \
         .getOrCreate()
 
-    #  consumidor afka
+    #  consumidor kafka
     consumer = KafkaConsumer(
         'your_topic_name',
         bootstrap_servers='kafka:9092',
