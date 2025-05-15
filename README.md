@@ -1,64 +1,80 @@
-# Docker Kafka Spark Python Project
+# RealTime Data Pipeline com Kafka, Spark e Python
 
-This project sets up a basic application using Docker that integrates Kafka, Spark, and a Python application. Below are the details for setting up and running the project.
+Este projeto implementa um pipeline de dados em tempo real que gera, ingere, processa e visualiza eventos contínuos utilizando Docker para orquestração. Ele integra Kafka, Spark e uma aplicação Python para processar dados em streaming.
 
-## Project Structure
+---
 
-```
+## Estrutura do Projeto
+
 docker-kafka-spark-python
 ├── docker-compose.yml
-├── kafka
-│   └── Dockerfile
-├── spark
-│   └── Dockerfile
-├── python-app
-│   ├── Dockerfile
-│   ├── app.py
-│   └── requirements.txt
+├── kafka/
+│ └── Dockerfile
+├── spark/
+│ └── Dockerfile
+├── python-app/
+│ ├── Dockerfile
+│ ├── app.py
+│ └── requirements.txt
 └── README.md
-```
 
-## Prerequisites
+yaml
+Copiar
+Editar
 
-- Docker installed on your machine
-- Docker Compose installed
+---
 
-## Setup Instructions
+## Tecnologias Utilizadas
 
-1. Clone the repository or download the project files to your local machine.
+- 🐍 Python (geração e envio de eventos em JSON)
+- 🧭 Apache Kafka (mensageria para eventos em tempo real)
+- ⚡ Apache Spark (processamento de dados em streaming)
+- 🐳 Docker / Docker Compose (containerização e orquestração)
 
-2. Navigate to the project directory:
+---
 
-   ```
+## Requisitos
+
+- Docker instalado na máquina  
+- Docker Compose instalado
+
+---
+
+## Como Rodar o Projeto
+
+1. Clone ou faça download do repositório.
+
+2. Navegue até o diretório do projeto:
+
+   ```bash
    cd docker-kafka-spark-python
-   ```
+Execute para construir e subir os containers:
 
-3. Build and start the services using Docker Compose:
+bash
+Copiar
+Editar
+docker-compose up --build
+Como Usar
+A aplicação Python envia eventos JSON para o Kafka.
 
-   ```
-   docker-compose up --build
-   ```
+Spark consome e processa esses eventos em tempo real.
 
-   This command will build the Docker images for Kafka, Spark, and the Python application, and start the containers.
+Monitore os logs dos containers para acompanhar a atividade de cada serviço.
 
-## Usage
+Parar os Serviços
+Para interromper e remover os containers:
 
-- Once the services are running, you can interact with the Python application, which connects to Kafka and processes data using Spark.
-- You can access the logs of each service to monitor their activity.
-
-## Stopping the Services
-
-To stop the services, you can use:
-
-```
+bash
+Copiar
+Editar
 docker-compose down
-```
+Personalização
+Modifique python-app/app.py para implementar a lógica da sua aplicação.
 
-This command will stop and remove the containers created by Docker Compose.
+Atualize python-app/requirements.txt para incluir dependências Python adicionais.
 
-## Additional Information
+Visão Geral
+Este pipeline exemplifica um fluxo típico de dados em tempo real com geração, ingestão, processamento e análise utilizando ferramentas populares. Pode ser expandido para incluir armazenamento analítico (como Apache Druid) e visualização (como Metabase).
 
-- Modify the `python-app/app.py` file to implement your application logic.
-- Update `python-app/requirements.txt` to add any additional Python dependencies required for your application.
-
-For further details on Kafka, Spark, and Docker, refer to their respective documentation.
+Licença
+Este projeto está disponível sob a licença MIT (ou outra que desejar).
