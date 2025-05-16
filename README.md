@@ -74,4 +74,4 @@ Visão Geral
 Este pipeline exemplifica um fluxo típico de dados em tempo real com geração, ingestão, processamento e análise utilizando ferramentas populares. Pode ser expandido para incluir armazenamento analítico (como Apache Druid) e visualização (como Metabase).
 
 Licença
-Este projeto está disponível sob a licença MIT (ou outra que desejar).
+Este projeto está disponível sob a licença MIT.
