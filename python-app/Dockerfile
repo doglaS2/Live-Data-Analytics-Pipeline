@@ -1,15 +1,21 @@
-FROM python:3.9-slima
+FROM python:3.9-slim
 
-COPY app.py .
+# Instalar Java 8
+RUN apt-get update && \
+    apt-get install -y software-properties-common && \
+    apt-get install -y default-jdk && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
-CMD FROM python:3.9-slim
+# Configurar JAVA_HOME
+ENV JAVA_HOME=/usr/lib/jvm/default-java
 
-WORKDIR /app
-
+# Instalar dependências Python
 COPY requirements.txt .
-
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY app.py .
+# Copiar código da aplicação
+COPY . .
 
-CMD ["python", "app.py"]["python", "app.py"]
+# Comando para executar a aplicação
+CMD ["python", "app.py"]
