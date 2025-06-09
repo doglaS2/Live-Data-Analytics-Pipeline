@@ -7,6 +7,10 @@ services:
       ZOO_MY_ID: 1
       ZOO_PORT: 2181
       ZOO_4LW_COMMANDS_WHITELIST: "*"
+    deploy:
+      resources:
+        limits:
+          memory: 256m
 
   kafka:
     build:
@@ -22,11 +26,17 @@ services:
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
       KAFKA_BROKER_ID: 1
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_HEAP_OPTS: "-Xmx512m -Xms512m"
     healthcheck:
-      test: ["CMD-SHELL", "kafka-topics.sh --bootstrap-server localhost:9092 --list"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      test: ["CMD-SHELL", "kafka-topics.sh --bootstrap-server localhost:9092 --list || exit 1"]
+      interval: 30s
+      timeout: 20s
+      retries: 10
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          memory: 768m
 
   kafka-setup:
     image: confluentinc/cp-kafka:7.0.0
@@ -36,7 +46,7 @@ services:
     command: >
       bash -c "
         echo 'Waiting for Kafka to be ready...' &&
-        sleep 10 &&
+        sleep 30 &&
         kafka-topics --create --if-not-exists --bootstrap-server kafka:9092 --topic events --partitions 1 --replication-factor 1
       "
 
@@ -55,6 +65,10 @@ services:
       SPARK_RPC_ENCRYPTION_ENABLED: "no"
       SPARK_LOCAL_IPS: spark
       SPARK_PUBLIC_DNS: localhost
+    deploy:
+      resources:
+        limits:
+          memory: 1024m
 
   python-app:
     build:
@@ -66,6 +80,137 @@ services:
         condition: service_completed_successfully
     environment:
       KAFKA_HOST: kafka
+    deploy:
+      resources:
+        limits:
+          memory: 256m
+
+  # Serviço do Druid
+  druid-coordinator:
+    image: fokkodriesprong/docker-druid:latest
+    command: coordinator-overlord
+    ports:
+      - "8081:8081"
+      - "8090:8090"
+    environment:
+      - druid_zk_service_host=zookeeper
+      - druid_zk_service_port=2181
+      - druid_processing_buffer_sizeBytes=256000000
+      - druid_processing_numThreads=2
+      - druid_coordinator_startDelay=PT30S
+      - druid_zk_paths_base=/druid
+      - druid_zk_paths_properties=/druid/properties
+      - druid_zk_paths_coordinator=/druid/coordinator
+      - druid_zk_paths_indexer=/druid/indexer
+      - druid_zk_paths_broker=/druid/broker
+      - druid_zk_paths_historical=/druid/historical
+      - druid_zk_paths_middleManager=/druid/middleManager
+      - druid_zk_paths_overlord=/druid/overlord
+      - druid_zk_paths_discovery=/druid/discovery
+      - druid_zk_paths_loadQueue=/druid/loadQueue
+      - druid_zk_paths_announcementsPath=/druid/announcements
+      - druid_zk_paths_liveSegmentsPath=/druid/segments
+      - DRUID_XMS=512m
+      - DRUID_XMX=1024m
+      - DRUID_MAXDIRECTMEMORYSIZE=1g
+    volumes:
+      - druid_data:/opt/shared
+    depends_on:
+      - zookeeper
+    deploy:
+      resources:
+        limits:
+          memory: 2048m
+
+  druid-broker:
+    image: fokkodriesprong/docker-druid:latest
+    command: broker
+    ports:
+      - "8082:8082"
+    environment:
+      - druid_zk_service_host=zookeeper
+      - druid_zk_service_port=2181
+      - druid_processing_buffer_sizeBytes=256000000
+      - druid_processing_numThreads=2
+      - DRUID_XMS=512m
+      - DRUID_XMX=1024m
+      - DRUID_MAXDIRECTMEMORYSIZE=1g
+    volumes:
+      - druid_data:/opt/shared
+    depends_on:
+      - druid-coordinator
+    deploy:
+      resources:
+        limits:
+          memory: 2048m
+
+  druid-middlemanager:
+    image: fokkodriesprong/docker-druid:latest
+    command: middleManager
+    ports:
+      - "8091:8091"
+    environment:
+      - druid_zk_service_host=zookeeper
+      - druid_zk_service_port=2181
+      - druid_processing_buffer_sizeBytes=256000000
+      - druid_processing_numThreads=2
+      - DRUID_XMS=512m
+      - DRUID_XMX=1024m
+      - DRUID_MAXDIRECTMEMORYSIZE=1g
+    volumes:
+      - druid_data:/opt/shared
+    depends_on:
+      - druid-coordinator
+    deploy:
+      resources:
+        limits:
+          memory: 2048m
+
+  # Banco de dados para o Metabase
+  metabase-db:
+    image: postgres:13
+    environment:
+      - POSTGRES_USER=metabase
+      - POSTGRES_PASSWORD=metabase
+      - POSTGRES_DB=metabase
+    volumes:
+      - metabase_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U metabase"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+
+  # Serviço do Metabase
+  metabase:
+    image: metabase/metabase:latest
+    ports:
+      - "3000:3000"
+    environment:
+      - MB_DB_TYPE=postgres
+      - MB_DB_DBNAME=metabase
+      - MB_DB_PORT=5432
+      - MB_DB_USER=metabase
+      - MB_DB_PASS=metabase
+      - MB_DB_HOST=metabase-db
+      - JAVA_TOOL_OPTIONS=-Xmx1g
+    depends_on:
+      metabase-db:
+        condition: service_healthy
+      druid-broker:
+        condition: service_started
+    deploy:
+      resources:
+        limits:
+          memory: 1024m
+
+volumes:
+  druid_data:
+  metabase_data:
 
 networks:
   default:

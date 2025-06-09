@@ -1,6 +1,6 @@
 # RealTime Data Pipeline com Kafka, Spark e Python
 
-Este projeto implementa um pipeline de dados em tempo real que gera, ingere, processa e visualiza eventos contínuos utilizando Docker para orquestração. Ele integra Kafka, Spark e uma aplicação Python para processar dados em streaming.
+Este projeto implementa um pipeline de dados em tempo real que gera, ingere, processa e visualiza eventos contínuos utilizando Docker para orquestração. Ele integra Kafka, Spark, Druid e Metabase para processar e visualizar dados em streaming.
 
 ## Arquitetura do Sistema
 
@@ -9,7 +9,11 @@ Python App -> Gera Eventos
      ↓
    Kafka   -> Armazena Eventos
      ↓
+   Druid   -> Processa e Armazena
+     ↓
    Spark   -> Processa Eventos
+     ↓
+  Metabase -> Visualiza Dados
 ```
 
 ### Componentes
@@ -24,35 +28,41 @@ Python App -> Gera Eventos
    - Armazena os eventos em tópicos
    - Permite múltiplos consumidores
 
-3. **Spark**
+3. **Druid**
+   - Processa e armazena dados em tempo real
+   - Permite consultas SQL em dados de streaming
+   - Componentes:
+     - Coordinator (porta 8081)
+     - Broker (porta 8082)
+     - MiddleManager (porta 8091)
+
+4. **Spark**
    - Processa os dados em tempo real
    - Realiza transformações nos eventos
    - Escalável para grandes volumes de dados
 
+5. **Metabase**
+   - Visualização de dados em tempo real
+   - Dashboards interativos
+   - Gráficos e métricas
+
 ## Tecnologias Utilizadas
 
-### Por que Python?
-- Linguagem fácil de usar
-- Boas bibliotecas para Kafka
-- Ideal para scripts e automação
+- 🐍 Python (geração e envio de eventos em JSON)
+- 🧭 Apache Kafka (mensageria para eventos em tempo real)
+- ⚡ Apache Druid (processamento e armazenamento de dados em tempo real)
+- 🔥 Apache Spark (processamento de dados em streaming)
+- 📊 Metabase (visualização e dashboards)
+- 🐳 Docker / Docker Compose (containerização e orquestração)
 
-### Por que Java?
-- Necessário para Spark e Kafka
-- Spark é escrito em Java
-- Kafka é escrito em Java
-- Muitas ferramentas de Big Data usam Java como base
+## Requisitos
 
-### Por que Debian?
-- Base da imagem Python oficial
-- Mais leve que Ubuntu
-- Mais estável
-- Usamos a imagem `python:3.9-slim`
-
-### Por que Docker?
-- Isola cada componente
-- Garante versões consistentes
-- Fácil de executar em qualquer máquina
-- Simplifica a configuração do ambiente
+- Docker instalado na máquina  
+- Docker Compose instalado
+- 8GB de RAM (mínimo)
+- 20GB de espaço em disco
+- Processador com 4 cores ou mais
+- Sistema operacional Linux recomendado para melhor performance
 
 ## Estrutura do Projeto
 
@@ -74,15 +84,19 @@ docker-kafka-spark-python
 
 - 🐍 Python (geração e envio de eventos em JSON)
 - 🧭 Apache Kafka (mensageria para eventos em tempo real)
-- ⚡ Apache Spark (processamento de dados em streaming)
+- ⚡ Apache Druid (processamento e armazenamento de dados em tempo real)
+- 🔥 Apache Spark (processamento de dados em streaming)
+- 📊 Metabase (visualização e dashboards)
 - 🐳 Docker / Docker Compose (containerização e orquestração)
 
 ## Requisitos
 
 - Docker instalado na máquina  
 - Docker Compose instalado
-- 4GB de RAM (mínimo)
-- 10GB de espaço em disco
+- 8GB de RAM (mínimo)
+- 20GB de espaço em disco
+- Processador com 4 cores ou mais
+- Sistema operacional Linux recomendado para melhor performance
 
 ## Como Rodar o Projeto
 
@@ -103,8 +117,49 @@ docker-kafka-spark-python
 ## Como Usar
 
 - A aplicação Python envia eventos JSON para o Kafka
-- Spark consome e processa esses eventos em tempo real
+- Druid ingere e processa os dados em tempo real
+- Spark consome e processa esses eventos
+- Metabase visualiza os dados processados
 - Monitore os logs dos containers para acompanhar a atividade de cada serviço
+
+### Acessando os Serviços
+
+- **Druid Coordinator**: http://localhost:8081
+  - Acesse "Query" para executar consultas SQL
+  - Acesse "Streams" para verificar ingestão de dados
+
+- **Metabase**: http://localhost:3000
+  - Primeiro acesso: configure o banco de dados (PostgreSQL)
+  - Host: metabase-db
+  - Porta: 5432
+  - Database: metabase
+  - Usuário: metabase
+  - Senha: metabase
+
+### Exemplo de Consulta no Druid
+
+```sql
+SELECT *
+FROM "events"
+LIMIT 10
+```
+
+### Exemplo de Dashboard no Metabase
+
+1. Crie uma nova pergunta
+2. Selecione "Custom SQL"
+3. Use a query:
+```sql
+SELECT 
+  DATE_TRUNC('hour', timestamp) as hora,
+  COUNT(*) as total_eventos,
+  AVG(valor) as media_valor
+FROM events
+GROUP BY 1
+ORDER BY 1
+```
+
+4. Visualize como gráfico de linha
 
 ## Parar os Serviços
 
@@ -142,6 +197,16 @@ docker-compose down
    - Verifique se o Kafka está recebendo eventos
    - Confira os logs do Spark para erros
 
+4. **Druid não mostra dados**
+   - Verifique se o Kafka está saudável
+   - Confirme se o tópico "events" existe
+   - Verifique os logs do Druid
+
+5. **Metabase sem conexão**
+   - Verifique se o PostgreSQL está rodando
+   - Confirme as credenciais de conexão
+   - Verifique os logs do Metabase
+
 ## Personalização
 
 - Modifique `python-app/app.py` para implementar a lógica da sua aplicação
@@ -158,7 +223,8 @@ O pipeline pode ser estendido para:
 2. Calcular estatísticas (média, máximo, mínimo)
 3. Filtrar eventos específicos
 4. Agrupar eventos por critérios
-5. Adicionar visualização dos dados
+5. Criar dashboards personalizados no Metabase
+6. Adicionar mais visualizações e métricas
 
 ## Contribuindo
 
